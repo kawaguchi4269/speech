@@ -1,4 +1,4 @@
-require_relative 'say'
+require_relative 'timer'
 load App.root.join 'db_connection.rb'
 dbm, db = App.dbm, App.db
 loop do
@@ -15,7 +15,7 @@ loop do
     sleep(1)
     member = member.sample
     puts member[1]
-  	App::Say.generic member[1]
+  	Notify.say member[1]
     dbm.update_speech(member[0], Time.now.strftime("%Y-%m-%d"))
     puts "タイマーを使用しますか？ : y/n"
     select = gets.chomp
@@ -41,7 +41,7 @@ loop do
 	when 99
 		timer
 	when 999
-  	App::Say.timeup
+  	Notify.say 'time up'
  	when 0
     exit
   end
