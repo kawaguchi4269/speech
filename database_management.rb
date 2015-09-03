@@ -41,6 +41,15 @@ class DatabaseManagement
     member = @db.execute("SELECT id, name FROM users WHERE users.id IN (#{ids.join(",")})")
   end
 
+  def last_speeches
+    sql = <<-"SQL"
+      SELECT user_id
+      FROM speeches LEFT JOIN users ON users.id = speeches.user_id
+      ORDER BY speeches.id DESC LIMIT 2
+      SQL
+    @db.execute(sql).join(" ")
+  end
+
   def history(name)
     sql = <<-"SQL"
       SELECT speeches.speech_at
@@ -48,6 +57,7 @@ class DatabaseManagement
       WHERE users.name = "#{name}"
       SQL
     count = 0
+    puts "speeches".center(20, "-")
     speeches = @db.execute(sql) { |speech_at|
       puts "日付 : #{speech_at.join}"
       count += 1
