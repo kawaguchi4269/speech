@@ -39,7 +39,7 @@ def nominate
 
   animate_progress
   member = member.sample
-  puts member[1]
+  puts `cowsay #{member[1]}`
   Notify.say member[1]
   App.dbm.update_speech(member[0], Time.now.strftime('%Y-%m-%d'))
   timer if confirm?('タイマーを使用しますか')
