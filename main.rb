@@ -71,9 +71,7 @@ exit debug(@option[:debug]) if @option[:debug]
 choices = %w( 終了 自動選出 全履歴 個人の履歴 選出 メンバー追加 メンバー削除 )
 loop do
   @view.show_members
-  select = prompt_mode choices
-  puts "\n#{choices[select]}"
-  case select
+  case prompt_mode choices
   when 0 then exit
   when 1 then nominate
   when 2 then @view.show_all_speeches
