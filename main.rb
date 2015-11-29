@@ -28,14 +28,14 @@ def debug(type)
 end
 
 def nominate
-  STDERR.puts "[DEB] 候補: #{App.dbm.select_member_without([]).map(&:last).join(', ')} \n\n"
+  STDERR.puts "[DEB] 候補: #{App.dbm.select_member_without([]).map(&:last).join(', ')} \n\n" if $DEBUG
   puts '下記の二人が選出から外れます'
   @view.show_last_speeches
   return unless confirm?('よろしいですか')
   member = App.dbm.select_member_without(App.dbm.last_speeches.map(&:first))
-  STDERR.puts "[DEB] 候補: #{member.map(&:last).join(', ')} \n\n"
+  STDERR.puts "[DEB] 候補: #{member.map(&:last).join(', ')} \n\n" if $DEBUG
   sieve_candidates!(member) if confirm?('追加除外', default: false)
-  STDERR.puts "[DEB] 候補: #{member.map(&:last).join(', ')} \n\n"
+  STDERR.puts "[DEB] 候補: #{member.map(&:last).join(', ')} \n\n" if $DEBUG
 
   animate_progress
   member = member.sample
