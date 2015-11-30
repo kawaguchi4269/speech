@@ -1,32 +1,25 @@
 class View
   def initialize
-    @db = SQLite3::Database.new(App.settings[:db_name])
-    @speeches = Arel::Table.new(:speeches)
-    @users = Arel::Table.new(:users)
+    @dbm = App.dbm
   end
-  attr_reader :speeches, :users
 
   def show_members
     puts 'member'.center(20, '-')
-    @db.execute('SELECT * FROM users') do |id, name|
+    @dbm.users_all do |id, name|
       puts "#{id} | #{name}"
     end
   end
 
   def show_all_speeches
     puts 'speeches'.center(20, '-')
-    sql = <<-"SQL"
-        SELECT user_id, speech_at, name
-        FROM speeches LEFT JOIN users ON users.id = speeches.user_id
-        SQL
-    @db.execute(sql) do |user_id, speech_at, name|
+    @dbm.speeches_all do |user_id, speech_at, name|
       puts "#{user_id} | #{speech_at} | #{name}"
     end
   end
 
   def show_last_speeches
     puts 'speeches'.center(20, '-')
-    App.dbm.last_speeches.reverse_each do |user_id, name|
+    @dbm.last_speeches.reverse_each do |user_id, name|
       puts "#{user_id} | #{name}"
     end
   end
@@ -49,5 +42,27 @@ module Display
       ['/', '-', '\\', '|', ' '].each(&:frame)
     end
     puts
+  end
+end
+
+module Notify
+  def self.say(arg)
+    `say -v Allison #{arg}`
+  rescue Errno::ENOENT
+    puts `cowsay #{arg}`
+  end
+end
+
+require 'io/console'
+module Timer
+  def timer
+    t = Time.new(0, 1, 1, 0, 3)
+    180.times do |_argv|
+      sleep(1)
+      t -= 1
+      print "\n" * (STDOUT.winsize[0] - Artii::Base.new.asciify('3:00').count("\n"))
+      puts Artii::Base.new.asciify t.strftime('%M:%S')
+    end
+    Notify.say 'time’s up'
   end
 end

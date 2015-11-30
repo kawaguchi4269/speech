@@ -24,7 +24,7 @@ end
 
 opt = OptionParser.new
 @option = {}
-opt.on('-d TYPE', 'test timer mic last') { |v| @option[:debug] = v }
+opt.on('-c', 'checks test, timer, mic and last') { @option[:checkup] = true }
 opt.parse!(ARGV)
 
 ActiveRecord::Base.establish_connection(
@@ -35,4 +35,10 @@ Arel::Table.engine = ActiveRecord::Base
 if $DEBUG
   require 'timecop'
   Timecop.scale(4 * 60**2)
+
+  set_trace_func proc { |event, file, line, id, binding, classname|
+    # only interested in events of type 'call' (Ruby method calls)
+    # see the docs for set_trace_func for other supported event types
+    App.logger.debug "#{classname}##{id} called" if event == 'call'
+  }
 end

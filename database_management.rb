@@ -1,7 +1,7 @@
 class DatabaseManagement
   def initialize
-    unless File.exist?('speech.db')
-      @db = SQLite3::Database.new('speech.db')
+    unless File.exist? App.settings[:db_name]
+      @db = SQLite3::Database.new App.settings[:db_name]
       sql = <<-SQL
       CREATE TABLE users (
         id integer PRIMARY KEY AUTOINCREMENT,
@@ -15,10 +15,10 @@ class DatabaseManagement
       SQL
       @db.execute_batch(sql)
     end
+    @db = SQLite3::Database.new App.settings[:db_name]
 
     @speeches = Arel::Table.new(:speeches)
     @users = Arel::Table.new(:users)
-    @db = SQLite3::Database.new(App.settings[:db_name])
   end
   attr_reader :speeches, :users
 
@@ -26,12 +26,27 @@ class DatabaseManagement
     @db.execute users.project(:name).where(users[:id].in(ids)).to_sql
   end
 
+  def users_all(&block)
+    @db.execute('SELECT * FROM users', &block)
+  end
+
   def user_entry(name)
+    return if name.empty?
     @db.execute("INSERT INTO users (name) VALUES('#{name}')")
   end
 
   def user_delete(id)
+    id = id.to_i
+    return if id.zero?
     @db.execute("DELETE FROM users WHERE id = (#{id})")
+  end
+
+  def speeches_all(&block)
+    sql = <<-"SQL"
+        SELECT user_id, speech_at, name
+        FROM speeches LEFT JOIN users ON users.id = speeches.user_id
+        SQL
+    @db.execute(sql, &block)
   end
 
   def update_speech(user_id, speech_at)
@@ -44,7 +59,7 @@ class DatabaseManagement
       "SELECT id, name FROM users WHERE users.id IN (#{ids.join(',')})")
     fail 'だれもいない' if member.empty?
     if member.any? { |e| e.last.empty? }
-      STDERR.puts "[WARN] 変な値 #{member.select { |e| e.last.empty? }}"
+      App.logger.warn "変な値 #{member.select { |e| e.last.empty? }}"
       # FIXME
       member.delete_if { |e| e.last.empty? }
     end
@@ -60,14 +75,14 @@ class DatabaseManagement
     @db.execute(sql)
   end
 
-  def last_speeches
+  def last_speeches(&block)
     sql = speeches
           .project(:user_id, :name)
           .join(users)
           .on(speeches[:user_id].eq(users[:id]))
           .order(speeches[:speech_at].desc)
           .take(2).to_sql
-    @db.execute(sql)
+    @db.execute(sql, &block)
   end
 
   def history(name)

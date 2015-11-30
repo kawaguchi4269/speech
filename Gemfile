@@ -8,7 +8,7 @@ gem 'artii'
 gem 'cowsay' # fallback for say
 gem 'inquirer' # better highline
 
-gem 'pry',     require: false
+gem 'pry'
 gem 'timecop', require: false
 gem 'rake',    require: false
 gem 'rspec',   require: false
