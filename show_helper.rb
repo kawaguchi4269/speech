@@ -1,30 +1,3 @@
-class View
-  def initialize
-    @dbm = App.dbm
-  end
-
-  def show_members
-    puts 'member'.center(20, '-')
-    @dbm.users_all do |id, name|
-      puts "#{id} | #{name}"
-    end
-  end
-
-  def show_all_speeches
-    puts 'speeches'.center(20, '-')
-    @dbm.speeches_all do |user_id, speech_at, name|
-      puts "#{user_id} | #{speech_at} | #{name}"
-    end
-  end
-
-  def show_last_speeches
-    puts 'speeches'.center(20, '-')
-    @dbm.last_speeches.reverse_each do |user_id, name|
-      puts "#{user_id} | #{name}"
-    end
-  end
-end
-
 class String # :nodoc:
   def frame
     print slice 0
@@ -45,14 +18,6 @@ module Display
   end
 end
 
-module Notify
-  def self.say(arg)
-    `say -v Allison #{arg}`
-  rescue Errno::ENOENT
-    puts `cowsay #{arg}`
-  end
-end
-
 require 'io/console'
 module Timer
   def timer
@@ -64,5 +29,42 @@ module Timer
       puts Artii::Base.new.asciify t.strftime('%M:%S')
     end
     Notify.say 'time’s up'
+  end
+end
+
+class View
+  include Display
+  include Timer
+  def show(method)
+    puts send(method).map { |c| c.join ' | ' }.join("\n")
+  end
+
+  private
+
+  def members
+    Employee.all.each_with_object([]) do |employee, m|
+      m << [employee.id.to_s.ljust(2), employee.name]
+    end
+  end
+
+  def all_speeches
+    Speech.all.each_with_object([]) do |speech, m|
+      m << [speech.employee_id.to_s.ljust(2), speech.speech_at, speech.employee.name]
+    end
+  end
+
+  def last_speeches
+    Speech.last(2).each_with_object([]) do |speech, m|
+      m << [speech.employee_id, speech.employee.name]
+    end
+  end
+end
+
+module Notify
+  def self.say(arg)
+    puts Cowsay::Character::Cow.say arg
+    `say -v Allison #{arg}`
+  rescue Errno::ENOENT
+    nil
   end
 end
