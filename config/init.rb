@@ -6,6 +6,8 @@ require 'optparse'
 require 'pathname'
 require 'logger'
 require 'date'
+require 'yaml'
+require 'erb'
 module App
   def self.root
     Pathname File.expand_path '../..', __FILE__
@@ -14,12 +16,6 @@ module App
   def self.logger
     @logger ||= Logger.new STDERR
   end
-
-  def self.settings
-    {
-      db_name: 'speech.db'
-    }
-  end
 end
 
 opt = OptionParser.new
@@ -27,16 +23,17 @@ opt = OptionParser.new
 opt.on('-c', 'checks test, timer, mic and last') { @option[:checkup] = true }
 opt.parse!(ARGV)
 
-ActiveRecord::Base.establish_connection(
-  adapter: 'sqlite3',
-  database: App.settings[:db_name])
-Arel::Table.engine = ActiveRecord::Base
+dbconfig = YAML.load File.read 'config/database.yml'
+ActiveRecord::Base.establish_connection(dbconfig)
+ActiveRecord::Base.logger = Logger.new(STDERR)
+# Time.zone_default =  Time.find_zone! 'Tokyo' # config.time_zone
+Dir.glob("#{App.root}/models/*.rb").each { |f| require f }
 
 if $DEBUG
   require 'timecop'
   Timecop.scale(4 * 60**2)
 
-  set_trace_func proc { |event, file, line, id, binding, classname|
+  set_trace_func proc { |event, _file, _line, id, _binding, classname|
     # only interested in events of type 'call' (Ruby method calls)
     # see the docs for set_trace_func for other supported event types
     App.logger.debug "#{classname}##{id} called" if event == 'call'
